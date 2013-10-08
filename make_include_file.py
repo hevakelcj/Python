@@ -22,6 +22,12 @@ class_need_file = 'class_list.in'
 class_need_list = {}
 built_file_list = []
 
+def read_file_lines(file_name) :
+    rfile = open(file_name, 'r')
+    lines = rfile.readlines()
+    rfile.close()
+    return lines
+
 def find_class_define_in_line(line) :
     m = re.search('^\s*class\s+([A-Za-z_]\w*)', line)
     if m : 
@@ -34,15 +40,10 @@ def find_class_define_in_line(line) :
 
 def get_class_list_in_file(file_name) :
     class_list = []
-    rfile = open(file_name, "r")
-    while True :
-        line = rfile.readline()
-        if not line : 
-            break
+    for line in read_file_lines(file_name) :
         class_name = find_class_define_in_line(line)
         if class_name :
             class_list.append(class_name)
-    rfile.close()
     return class_list
 
 def build_class_include_file(class_name, file_name) : 
@@ -106,13 +107,11 @@ def clear() :
     if not os.path.exists(list_file) :
         return 
 
-    rfile = open(list_file, 'r')
-    for line in rfile.readlines() :
+    for line in read_file_lines(list_file) :
         file_name = './%s/%s' % (output_include_path, line.strip('\n'))
         if os.path.exists(file_name) :
             os.remove(file_name)
 
-    rfile.close()
     os.remove(list_file)
 
 def load() :
@@ -120,13 +119,11 @@ def load() :
         print 'ERROR: need ', class_need_file
         quit()
 
-    rfile = open(class_need_file, 'r')
-    for line in rfile.readlines() :
+    for line in read_file_lines(class_need_file) :
         line = line.strip('\n')
         if re.match('^#', line) : continue
         if re.match('^[A-Za-z_]\w*$', line) :
             class_need_list[line] = 0
-    rfile.close()
 
 if __name__ == "__main__" :
     clear()
