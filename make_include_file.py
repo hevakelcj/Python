@@ -11,13 +11,20 @@ inside.
 File    : make_include_file.py
 Author  : Chunjun Li <hevakelcj@gmail.com>
 Date    : 2013-10-05
+
+[2013-10-10 V1.0] create and first commit
+[2013-10-11 V1.1] 
+    (1) In last version the include path is ".././xxxx/xx.h". it should be
+        "../xxxx/xx.h"
+    (2) /*--aa.h--*/ in head file can't be recognized, but it works in 
+        this version.
 '''
 import os
 import re
 
 output_include_path = 'inc'
-built_list_file = 'class_list.out'
-class_need_file = 'class_list.in'
+built_list_file = 'Include.lst'
+class_need_file = 'Include.lst'
 
 class_need_list = {}
 built_file_list = []
@@ -34,7 +41,7 @@ def find_class_define_in_line(line) :
         if not re.search('^\s*class\s+[A-Za-z_]\w*\s*;', line) : 
             return m.group(1)
     else :
-        m = re.search('^/\*--([A-Za-z_]\w*)--\*/', line)
+        m = re.search('^\s*/\*--\s*([A-Za-z0-9_\.]*)\s*--\*/', line)
         if m :
             return m.group(1)
 
@@ -47,7 +54,7 @@ def get_class_list_in_file(file_name) :
     return class_list
 
 def build_class_include_file(class_name, file_name) : 
-    context = '#include "../%s"\n' % file_name
+    context = '#include "../%s"\n' % file_name[2:]
     built_file_list.append(class_name)
     wfile = open("./%s/%s" % (output_include_path, class_name), "a")
     wfile.write(context)
@@ -122,7 +129,7 @@ def load() :
     for line in read_file_lines(class_need_file) :
         line = line.strip('\n')
         if re.match('^#', line) : continue
-        if re.match('^[A-Za-z_]\w*$', line) :
+        if re.match('^\s*[A-Za-z0-9_\.]*\s*$', line) :
             class_need_list[line] = 0
 
 if __name__ == "__main__" :
