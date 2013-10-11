@@ -130,7 +130,7 @@ def load() :
         line = line.strip('\n')
         if re.match('^#', line) : continue
         if re.match('^\s*[A-Za-z0-9_\.]*\s*$', line) :
-            class_need_list[line] = 0
+            class_need_list[line.strip()] = 0
 
 if __name__ == "__main__" :
     clear()
