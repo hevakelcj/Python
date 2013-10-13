@@ -88,7 +88,7 @@ def make_file_head(file_name) :
     brief = ''
     if file_type == 'h' or file_type == 'hpp':
         brief = 'define class ??????'
-    elif file_type == 'cpp' :
+    elif file_type == 'cpp' or file_type == 'c':
         brief = 'implement functions'
     else :
         pass
@@ -96,7 +96,7 @@ def make_file_head(file_name) :
 
     return [t]
 
-def make_mem_func_comment(func_type, class_name, func_name, arg_list, ret_type) :
+def make_func_comment(func_type, class_name, func_name, arg_list, ret_type) :
     text = '/**\n'
    
     if func_type == 'mem_func' :
@@ -209,7 +209,7 @@ def do_source_file(file_name) :
             if t != '':
                 # check wether function need comment
                 if is_need_insert_comment(lines_in, index) :
-                    lines_out += make_mem_func_comment(t, c, f, a, r)
+                    lines_out += make_func_comment(t, c, f, a, r)
             else :
                 pass
         lines_out.append(line)
