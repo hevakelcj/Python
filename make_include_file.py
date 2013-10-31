@@ -18,13 +18,15 @@ Date    : 2013-10-05
         "../xxxx/xx.h"
     (2) /*--aa.h--*/ in head file can't be recognized, but it works in 
         this version.
+[2013-10-31 V1.2]
+    Just changed the name of class_name_file and built_list_file
 '''
 import os
 import re
 
 output_include_path = 'inc'
-built_list_file = 'Include.lst'
-class_need_file = 'Include.lst'
+class_need_file = 'include_list'
+built_list_file = '.include_list'
 
 class_need_list = {}
 built_file_list = []
