@@ -20,6 +20,8 @@ Date    : 2013-10-05
         this version.
 [2013-10-31 V1.2]
     Just changed the name of class_name_file and built_list_file
+[2013-11-02 V1.3]
+    It can recognize struct as well as class.
 '''
 import os
 import re
@@ -38,9 +40,9 @@ def read_file_lines(file_name) :
     return lines
 
 def find_class_define_in_line(line) :
-    m = re.search('^\s*class\s+([A-Za-z_]\w*)', line)
+    m = re.search('^\s*(?:class|struct)\s+([A-Za-z_]\w*)', line)
     if m : 
-        if not re.search('^\s*class\s+[A-Za-z_]\w*\s*;', line) : 
+        if not re.search('^\s*(?:class|struct)\s+[A-Za-z_]\w*\s*;', line) : 
             return m.group(1)
     else :
         m = re.search('^\s*/\*--\s*([A-Za-z0-9_\.]*)\s*--\*/', line)
