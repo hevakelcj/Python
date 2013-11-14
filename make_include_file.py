@@ -20,17 +20,22 @@ Date    : 2013-10-05
         this version.
 [2013-10-31 V1.2]
     Just changed the name of class_name_file and built_list_file
-[2013-11-02 V1.3]
-    It can recognize struct as well as class.
+[2013-11-14 V1.3]
+    (1) Optimazed load regEx, skip empty line.
+    (2) Make it has ability to recognize "struct", "union", "enum" as well.
 '''
 import os
 import re
 
 output_include_path = 'inc'
-class_need_file = 'include_list'
+tags_list_file = 'include_list'
 built_list_file = '.include_list'
 
-class_need_list = {}
+define_RegEx = '^\s*(?:class|struct|enum|union)\s+([A-Za-z_]\w*)'
+declare_RegEx = '^\s*(?:class|struct|enum|union)\s+[A-Za-z_]\w*\s*;'
+tag_RegEx = '^\s*/\*--\s*([A-Za-z0-9_\.]*)\s*--\*/'
+
+tags_need_list = {}
 built_file_list = []
 
 def read_file_lines(file_name) :
@@ -39,20 +44,20 @@ def read_file_lines(file_name) :
     rfile.close()
     return lines
 
-def find_class_define_in_line(line) :
-    m = re.search('^\s*(?:class|struct)\s+([A-Za-z_]\w*)', line)
+def find_tag_in_line(line) :
+    m = re.search(define_RegEx, line)
     if m : 
-        if not re.search('^\s*(?:class|struct)\s+[A-Za-z_]\w*\s*;', line) : 
+        if not re.search(declare_RegEx, line) : 
             return m.group(1)
     else :
-        m = re.search('^\s*/\*--\s*([A-Za-z0-9_\.]*)\s*--\*/', line)
+        m = re.search(tag_RegEx, line)
         if m :
             return m.group(1)
 
 def get_class_list_in_file(file_name) :
     class_list = []
     for line in read_file_lines(file_name) :
-        class_name = find_class_define_in_line(line)
+        class_name = find_tag_in_line(line)
         if class_name :
             class_list.append(class_name)
     return class_list
@@ -67,9 +72,9 @@ def build_class_include_file(class_name, file_name) :
 def do_head_file(file_name) :
     class_list = get_class_list_in_file(file_name)
     for class_name in class_list :
-        if class_name in class_need_list :
+        if class_name in tags_need_list :
             build_class_include_file(class_name, file_name)
-            class_need_list[class_name] += 1
+            tags_need_list[class_name] += 1
             #print "%s --> %s" % (class_name, file_name)
 
 def find_head_files(path) :
@@ -92,8 +97,8 @@ def build() :
 def summarize() :
     undo, done, more = '', '', ''
 
-    for class_name in class_need_list :
-        count = class_need_list[class_name]
+    for class_name in tags_need_list :
+        count = tags_need_list[class_name]
         if count == 0 : 
             undo += (class_name + ' ')
         elif count > 1 : 
@@ -126,15 +131,15 @@ def clear() :
     os.remove(list_file)
 
 def load() :
-    if not os.path.exists(class_need_file) :
-        print 'ERROR: need ', class_need_file
+    if not os.path.exists(tags_list_file) :
+        print 'ERROR: need ', tags_list_file
         quit()
 
-    for line in read_file_lines(class_need_file) :
+    for line in read_file_lines(tags_list_file) :
         line = line.strip('\n')
-        if re.match('^#', line) : continue
-        if re.match('^\s*[A-Za-z0-9_\.]*\s*$', line) :
-            class_need_list[line.strip()] = 0
+        if re.match('^\s*#', line) : continue
+        if re.match('^\s*[A-Za-z0-9_\.]+\s*$', line) :
+            tags_need_list[line.strip()] = 0
 
 if __name__ == "__main__" :
     clear()
