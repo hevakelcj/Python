@@ -23,11 +23,22 @@ Date    : 2013-10-05
 [2013-11-14 V1.3]
     (1) Optimazed load regEx, skip empty line.
     (2) Make it has ability to recognize "struct", "union", "enum" as well.
+[2014-08-21 V1.4]
+    Problem:
+        If it remove all file it made before, our project will rebuild a lot
+        of source again. It's time-consuming.
+    Solution:
+        It will not remove all include files before run. 
+        Make all new include files in temp directory. Then compare them with
+        old files. If two file is the same. It will not modify them.
 '''
 import os
 import re
+import filecmp
 
 output_include_path = 'inc'
+temp_output_include_path = 'temp_inc'
+
 tags_list_file = 'include_list'
 built_list_file = '.include_list'
 
@@ -65,7 +76,7 @@ def get_class_list_in_file(file_name) :
 def build_class_include_file(class_name, file_name) : 
     context = '#include "../%s"\n' % file_name[2:]
     built_file_list.append(class_name)
-    wfile = open("./%s/%s" % (output_include_path, class_name), "a")
+    wfile = open("./%s/%s" % (temp_output_include_path, class_name), "a")
     wfile.write(context)
     wfile.close()
 
@@ -89,12 +100,12 @@ def build() :
     for file_name in file_list : 
         do_head_file(file_name)
 
-    wfile = open('./%s/%s' % (output_include_path, built_list_file), 'w')
+    wfile = open('./%s/%s' % (temp_output_include_path, built_list_file), 'w')
     for built_file in built_file_list :
         wfile.write(built_file + '\n')
     wfile.close()
 
-def summarize() :
+def report() :
     undo, done, more = '', '', ''
 
     for class_name in tags_need_list :
@@ -107,28 +118,16 @@ def summarize() :
             done += (class_name + ' ')
 
     print '-' * 80
-    if done != '' :
-        print '[DONE]:\n', done, '\n'
     if more != '' :
         print '[FOUND MORE THAN ONCE]:\n', more, '\n'
     if undo != '' :
         print '[NOT FOUND]:\n', undo, '\n'
 
-def clear() :
-    if not os.path.exists(output_include_path) :
+def prepare():
+    if not os.path.exists(output_include_path):
         os.mkdir(output_include_path)
-        return
-
-    list_file = './%s/%s' % (output_include_path, built_list_file)
-    if not os.path.exists(list_file) :
-        return 
-
-    for line in read_file_lines(list_file) :
-        file_name = './%s/%s' % (output_include_path, line.strip('\n'))
-        if os.path.exists(file_name) :
-            os.remove(file_name)
-
-    os.remove(list_file)
+    if not os.path.exists(temp_output_include_path):
+        os.mkdir(temp_output_include_path)
 
 def load() :
     if not os.path.exists(tags_list_file) :
@@ -141,8 +140,41 @@ def load() :
         if re.match('^\s*[A-Za-z0-9_\.]+\s*$', line) :
             tags_need_list[line.strip()] = 0
 
+def check():
+    inc_build_list_file = output_include_path+'/'+built_list_file
+    files_in_inc_dir = []
+    if os.path.exists(inc_build_list_file):
+        lines = read_file_lines(inc_build_list_file)
+        for l in lines:
+            files_in_inc_dir.append(l.strip())
+        files_in_inc_dir.append(built_list_file)
+
+
+    files_in_tmp_dir = os.listdir(temp_output_include_path)
+     
+    for f in files_in_inc_dir:
+        if not f in files_in_tmp_dir:
+            os.remove(output_include_path+'/'+f)
+            print "D\t", f
+
+    for f in files_in_tmp_dir:
+        tmp_file = temp_output_include_path + '/' + f;
+        inc_file = output_include_path + '/' + f;
+        if not f in files_in_inc_dir:
+            os.rename(tmp_file, inc_file)
+            print 'A\t', f
+        elif not filecmp.cmp(tmp_file, inc_file):
+            os.rename(tmp_file, inc_file)
+            print "M\t", f
+        else:
+            os.remove(tmp_file)
+
+    os.removedirs(temp_output_include_path)
+    pass
+
 if __name__ == "__main__" :
-    clear()
+    prepare()
     load()
     build()
-    summarize()
+    check()
+    report()
